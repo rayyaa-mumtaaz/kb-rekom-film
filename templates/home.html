@@ -1,0 +1,36 @@
+{% extends "layout.html" %}
+
+{% block content %}
+    <h1>Rekomendasi Film</h1>
+    <p>
+        Masukkan {{ required_count }}–{{ input_count }} film favorit. A* mencari kandidat di graf kemiripan film,
+        lalu Hill Climbing memilih 10 film yang relevan dan beragam.
+    </p>
+
+    {% if errors %}
+        <ul class="errors">
+            {% for error in errors %}
+                <li>{{ error }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    <form method="post" action="{{ url_for('recommend') }}">
+        {% for i in range(input_count) %}
+            <div class="field">
+                <label for="movie-{{ i }}">Film {{ i + 1 }}{% if i >= required_count %} (opsional){% endif %}</label>
+                <input type="text" id="movie-{{ i }}" name="movies" list="movie-titles" autocomplete="off"
+                       value="{{ old_titles[i] if i < old_titles|length else '' }}"
+                       {% if i < required_count %}required{% endif %}>
+            </div>
+        {% endfor %}
+
+        <datalist id="movie-titles">
+            {% for title in titles %}
+                <option value="{{ title }}"></option>
+            {% endfor %}
+        </datalist>
+
+        <button type="submit">Cari rekomendasi</button>
+    </form>
+{% endblock %}

@@ -1,0 +1,80 @@
+{% extends "layout.html" %}
+
+{% block title %}Hasil{% endblock %}
+
+{% block content %}
+    <a href="{{ url_for('home') }}">Kembali</a>
+
+    <h1>Hasil rekomendasi</h1>
+    <p>Film pilihan: {{ result.seeds | map(attribute='title') | join(', ') }}</p>
+
+    <h2>10 rekomendasi</h2>
+    <ol class="recommendations">
+        {% for item in result.items %}
+            <li>
+                <strong>{{ item.movie.title }}</strong> ({{ item.movie.year or '?' }})
+                <div class="meta">
+                    Rating {{ '%.1f' % item.movie.vote_average }}
+                    · {{ item.movie.genres | join(', ') }}
+                    · relevansi {{ '%.3f' % item.relevance }}
+                </div>
+                <div class="path">
+                    {% for step in item.path %}
+                        {% if loop.first %}{{ step.from_movie.title }}{% endif %}
+                        → {{ step.reason }} → {{ step.to_movie.title }}
+                    {% endfor %}
+                </div>
+            </li>
+        {% endfor %}
+    </ol>
+
+    <h2>Log A*</h2>
+    <p class="meta">
+        Node diekspansi: {{ result.search.expanded_count }}
+        · kandidat: {{ result.search.goals | length }}
+        · waktu: {{ '%.3f' % result.search.duration_ms }} ms
+    </p>
+    <table>
+        <thead>
+            <tr><th>Step</th><th>Film</th><th class="num">g</th><th class="num">h</th><th class="num">f</th><th>Aksi</th></tr>
+        </thead>
+        <tbody>
+            {% for step in result.search.steps %}
+                <tr>
+                    <td>{{ step.step }}</td>
+                    <td>{{ result.titles[step.node] }}</td>
+                    <td class="num">{{ '%.3f' % step.g }}</td>
+                    <td class="num">{{ '%.3f' % step.h }}</td>
+                    <td class="num">{{ '%.3f' % step.f }}</td>
+                    <td>{{ step.action }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h2>Log Hill Climbing</h2>
+    <p class="meta">
+        Skor terbaik: {{ '%.3f' % result.climb.best_score }} (restart {{ result.climb.best_restart }})
+        · waktu: {{ '%.3f' % result.climb.duration_ms }} ms
+    </p>
+    {% for restart, iterations in result.climb.log.items() %}
+        <h3>Restart {{ restart }}{% if restart == result.climb.best_restart %} <span class="best">(terbaik)</span>{% endif %}</h3>
+        <table>
+            <thead>
+                <tr><th>Iterasi</th><th>Keluar</th><th>Masuk</th><th class="num">Skor</th></tr>
+            </thead>
+            <tbody>
+                {% for row in iterations %}
+                    <tr>
+                        <td>{{ row.iteration }}</td>
+                        <td>{{ 'state awal' if row.removed is none else result.titles[row.removed] }}</td>
+                        <td>{{ '' if row.added is none else result.titles[row.added] }}</td>
+                        <td class="num">{{ '%.3f' % row.score }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endfor %}
+
+    <p><a href="{{ url_for('home') }}">Kembali</a></p>
+{% endblock %}
